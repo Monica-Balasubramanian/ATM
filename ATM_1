@@ -1,0 +1,84 @@
+import streamlit as st
+import random
+
+if "balance" not in st.session_state:
+    st.session_state.balance = 1000
+
+if "pin" not in st.session_state:
+    st.session_state.pin = "2719"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "otp" not in st.session_state:
+    st.session_state.otp = None
+
+st.title("ATM Simulation")
+
+
+if not st.session_state.logged_in:
+    st.header("Login")
+    pin = st.text_input("Enter your 4-digit PIN:", type="password")
+    if st.button("Login"):
+        if pin == st.session_state.pin:
+            st.session_state.logged_in = True
+            st.success("Login successful!")
+        else:
+            st.error("Invalid PIN. Please try again.")
+
+
+if st.session_state.logged_in:
+    st.header("ATM Menu")
+    action = st.selectbox(
+        "Choose an action:",
+        ["Deposit", "Withdraw", "View Balance", "Change PIN", "Logout"]
+    )
+
+    
+    if action == "Deposit":
+        amount = st.number_input("Enter amount to deposit:", min_value=0)
+        if st.button("Deposit"):
+            st.session_state.balance += amount
+            st.success(f"Deposited {amount}. New balance: {st.session_state.balance}")
+
+    
+    elif action == "Withdraw":
+        amount = st.number_input("Enter amount to withdraw:", min_value=0)
+        if st.button("Withdraw"):
+            if amount > st.session_state.balance:
+                st.error("Insufficient balance.")
+            elif amount > 1000:
+                if st.session_state.otp is None:
+                    st.session_state.otp = random.randint(1000, 9999)
+                    st.info(f"An OTP has been generated: {st.session_state.otp}")
+                    user_otp = st.text_input("Enter the OTP:", type="password")
+                    if st.button("Validate OTP"):
+                        if user_otp == str(st.session_state.otp):
+                            st.session_state.balance -= amount
+                            st.success(f"Withdrew {amount}. New balance: {st.session_state.balance}")
+                            st.session_state.otp = None  
+                        else:
+                            st.error("Incorrect OTP. Please try again.")
+        else:
+                st.session_state.balance -= amount
+                st.success(f"Withdrew {amount}. New balance: {st.session_state.balance}")
+
+    
+    elif action == "View Balance":
+        st.info(f"Your current balance is: {st.session_state.balance}")
+
+    
+    elif action == "Change PIN":
+        new_pin = st.text_input("Enter a new 4-digit PIN:", type="password")
+        if st.button("Change PIN"):
+            if len(new_pin) == 4 and new_pin.isdigit():
+                st.session_state.pin = new_pin
+                st.success("PIN changed successfully.")
+            else:
+                st.error("PIN must be a 4-digit number.")
+
+    
+    elif action == "Logout":
+        st.session_state.logged_in = False
+        st.session_state.otp = None  
+        st.success("Logged out successfully.")
